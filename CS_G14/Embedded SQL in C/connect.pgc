@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+EXEC SQL BEGIN DECLARE SECTION;
+char *a, *b, *c, *d;
+char *query = NULL;
+char *name = NULL;
+char *insertS = NULL;
+char *secondD = NULL;
+
+int yearno, ht, wt, chest, sex;
+EXEC SQL END DECLARE SECTION;
+
+void execute() {
+  EXEC SQL PREPARE myst from :query;
+  EXEC SQL EXECUTE myst INTO :c;
+}
+
+void execute_loaction() {
+  size_t len = 500;
+  getline(&query, &len, stdin);
+  EXEC SQL PREPARE myst from :query;
+  EXEC SQL DECLARE cursor1 CURSOR FOR myst;
+  EXEC SQL OPEN cursor1;
+  EXEC SQL WHENEVER NOT FOUND DO BREAK;
+  while (1) {
+    EXEC SQL FETCH cursor1 INTO :a, :b, :c, :d;
+    printf("%s %s %s %s\n", a, b, c, d);
+  }
+  EXEC SQL CLOSE cursor1;
+  EXEC SQL DEALLOCATE PREPARE myst;
+}
+
+void insert_data() {
+
+  query = malloc(sizeof(char) * 1000);
+  name = malloc(sizeof(char) * 1000);
+  insertS = malloc(sizeof(char) * 1000);
+  secondD = malloc(sizeof(char) * 1000);
+
+  size_t len = 500;
+  char *id = NULL;
+  id = malloc(sizeof(char) * 1000);
+  printf("Enter the ID of the Soldier\n");
+  getline(&id, &len, stdin);
+  strcpy(insertS, "Insert into soldier values ( '");
+  strcat(insertS, id);
+  strcat(insertS, "', ");
+  printf("Enter the name of the Soldier(Including Single Quotes): \n");
+  getline(&name, &len, stdin);
+  strcpy(secondD, " , 'soldier', '2017-04-15', '1999-06-29', '2045-02-21', '34th Mountain Division', 2011, '298144', 0, 175, 90, 75);"); // Dummy data inserted at the back
+  printf("%s %s\n", name, insertS);
+  strcat(insertS, name);
+  printf("%s\n", insertS );
+  strcat(insertS, secondD);
+  printf("%s\n", insertS);
+  EXEC SQL EXECUTE IMMEDIATE :insertS;
+}
+
+int main() {
+
+    EXEC SQL CONNECT TO "dbms" USER "yashladha" USING "iamstudious10";
+    EXEC SQL set search_path to armydb;
+    printf("Set search path to armydb\n");
+    while (1) {
+      printf("Choose any one option\n");
+      printf("1. Insert Soldier Data: \n");
+      printf("2. View a Sample Query from database: \n");
+      int ch;
+      scanf("%d", &ch);
+
+      switch(ch) {
+      case 1 :
+	insert_data();
+	break;
+      case 2:
+	execute_loaction();
+	break;
+      default:
+	printf("Wrong Choice try again!!! (Ctrl + C) to exit\n");
+      }
+      
+    }
+
+    /* EXEC SQL select count(pincode) into :c from location; */
+    /* printf("%d\n", c); */
+    /* EXEC SQL select count(soldier.id) into :c from soldier inner join soldier as sold2 on soldier.birthplacepincode = sold2.birthplacepincode where soldier.squadno in ( */
+    /* select squadno from soldier where soldier.id = 49158 ); */
+    // execute_loaction();
+    // insert_data();
+    EXEC SQL COMMIT;
+    EXEC SQL DISCONNECT ALL;
+    return 0;
+}
